@@ -25,10 +25,12 @@ import stl
 
 with open(sys.argv[1], 'rb') as f:
 	mesh1 = stl.load(f)
+mesh1.removeDoubleVertices()
 volume1 = volume.Volume(mesh1)
 
 with open(sys.argv[2], 'rb') as f:
 	mesh2 = stl.load(f)
+mesh2.removeDoubleVertices()
 volume2 = volume.Volume(mesh2)
 
 #Select the part that is outside the other
