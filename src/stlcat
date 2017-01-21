@@ -24,10 +24,16 @@ import stl
 
 totalMesh = mesh.Mesh()
 
-for filename in sys.argv:
+for filename in sys.argv[1:]:
 	with open(filename, 'rb') as f:
 		subMesh = stl.load(f)
-		#TODO: add to totalMesh
+		vertexOffset = len(totalMesh.vertices)
+		totalMesh.vertices += subMesh.vertices
+		totalMesh.triangles += \
+		[
+			[i+vertexOffset for i in tri]
+			for tri in subMesh.triangles
+		]
 
 stl.save(sys.stdout.buffer, totalMesh)
 
