@@ -1,0 +1,49 @@
+#!/usr/bin/env python3
+#    stlunion.py
+#    Copyright (C) 2017 by CJP
+#
+#    This file is part of NeSTL.
+#
+#    NeSTL is free software: you can redistribute it and/or modify
+#    it under the terms of the GNU General Public License as published by
+#    the Free Software Foundation, either version 3 of the License, or
+#    (at your option) any later version.
+#
+#    NeSTL is distributed in the hope that it will be useful,
+#    but WITHOUT ANY WARRANTY; without even the implied warranty of
+#    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#    GNU General Public License for more details.
+#
+#    You should have received a copy of the GNU General Public License
+#    along with NeSTL. If not, see <http://www.gnu.org/licenses/>.
+
+import sys
+
+import mesh
+import volume
+import stl
+
+with open(sys.argv[1], 'rb') as f:
+	mesh1 = stl.load(f)
+volume1 = volume.Volume(mesh1)
+
+with open(sys.argv[2], 'rb') as f:
+	mesh2 = stl.load(f)
+volume2 = volume.Volume(mesh2)
+
+#Select the part that is outside the other
+mesh1 = volume2.getOutsidePart(mesh1)
+mesh2 = volume1.getOutsidePart(mesh2)
+
+#Concatenate the meshes
+totalMesh = mesh1
+vertexOffset = len(totalMesh.vertices)
+totalMesh.vertices += mesh2.vertices
+totalMesh.triangles += \
+[
+	[i+vertexOffset for i in tri]
+	for tri in mesh2.triangles
+]
+
+stl.save(sys.stdout.buffer, totalMesh)
+
