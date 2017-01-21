@@ -17,6 +17,7 @@
 #    along with NeSTL. If not, see <http://www.gnu.org/licenses/>.
 
 #import sys
+import math
 
 
 
@@ -25,13 +26,38 @@ class Vector(list):
 		list.__init__(self, (x,y,z))
 
 
+	def __add__(self, v):
+		return Vector(self[0]+v[0], self[1]+v[1], self[2]+v[2])
+
+
+	def __sub__(self, v):
+		return Vector(self[0]-v[0], self[1]-v[1], self[2]-v[2])
+
+
+	def __rmul__(self, s):
+		return Vector(s*self[0], s*self[1], s*self[2])
+
+
 	def scale(self, v):
 		return Vector(self[0]*v[0], self[1]*v[1], self[2]*v[2])
 
 
-	def __add__(self, v):
-		return Vector(self[0]+v[0], self[1]+v[1], self[2]+v[2])
+	def dotProduct(self, v):
+		return self[0]*v[0] + self[1]*v[1] + self[2]*v[2]
 
+
+	def crossProduct(self, v):
+		return Vector(
+			self[1]*v[2] - self[2]*v[1],
+			self[2]*v[0] - self[0]*v[2],
+			self[0]*v[1] - self[1]*v[0]
+			)
+
+
+	def normal(self):
+		size = math.sqrt(self[0]**2 + self[1]**2 + self[2]**2)
+		return (1.0/size) * self
+		
 
 	def equals(self, other, maxError=1e-6):
 		avg = [0.5*(other[k] + self[k]) for k in range(3)]
