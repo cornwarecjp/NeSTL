@@ -1,4 +1,5 @@
-#    mesh.py
+#!/usr/bin/env python3
+#    stltranslate.py
 #    Copyright (C) 2017 by CJP
 #
 #    This file is part of NeSTL.
@@ -16,29 +17,21 @@
 #    You should have received a copy of the GNU General Public License
 #    along with NeSTL. If not, see <http://www.gnu.org/licenses/>.
 
+import sys
 
-class Vector(list):
-	def __init__(self, x=0.0, y=0.0, z=0.0):
-		list.__init__(self, (x,y,z))
+from mesh import Vector
+import stl
 
-	def scale(self, v):
-		return Vector(self[0]*v[0], self[1]*v[1], self[2]*v[2])
+t = Vector(float(sys.argv[-4]), float(sys.argv[-3]), float(sys.argv[-2]))
 
+with open(sys.argv[-1], 'rb') as f:
+	mesh = stl.load(f)
 
-	def __add__(self, v):
-		return Vector(self[0]+v[0], self[1]+v[1], self[2]+v[2])
+mesh.vertices = \
+[
+	v + t
+	for v in mesh.vertices
+]
 
-
-
-class Mesh:
-	def __init__(self):
-		self.vertices = []
-		self.triangles = []
-
-
-	def __repr__(self):
-		return self.__str__()
-
-	def __str__(self):
-		return '\n'.join([str(x) for x in self.vertices + self.triangles])
+stl.save(sys.stdout.buffer, mesh)
 
