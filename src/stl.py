@@ -23,8 +23,37 @@ from mesh import Mesh, Vector
 
 
 def load(fh):
+	#TODO: make it an option to read the text format
+
+	#Read header
+	text_format_magic = b'solid'
+	header_start = fh.read(len(text_format_magic))
+	if header_start == text_format_magic:
+		raise Exception('Text format STL loading not yet supported')
+	fh.read(80 - len(text_format_magic)) #read and ignore the rest of the header
+
+	#Read number of triangles
+	numTriangles = struct.unpack('<I', fh.read(4))[0] #4-byte little endian
+
+	#Read triangles
+	def readVector():
+		return Vector(
+			*struct.unpack('<fff', fh.read(3*4)) #4-byte little endian floats
+			)
+
 	ret = Mesh()
-	#TODO
+	for i in range(numTriangles):
+		n = readVector()
+		v0 = readVector()
+		v1 = readVector()
+		v2 = readVector()
+		attrByteCount = struct.unpack('<H', fh.read(2))[0] #2-byte little endian
+		fh.read(attrByteCount)
+		ret.vertices.append(v0)
+		ret.vertices.append(v1)
+		ret.vertices.append(v2)
+		ret.triangles.append([3*i, 3*i+1, 3*i+2])
+
 	return ret
 
 
