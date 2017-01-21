@@ -1,0 +1,61 @@
+#!/usr/bin/env python3
+#    stlsphere.py
+#    Copyright (C) 2017 by CJP
+#
+#    This file is part of NeSTL.
+#
+#    NeSTL is free software: you can redistribute it and/or modify
+#    it under the terms of the GNU General Public License as published by
+#    the Free Software Foundation, either version 3 of the License.
+#    (at your option) any later version.
+#
+#    NeSTL is distributed in the hope that it will be useful,
+#    but WITHOUT ANY WARRANTY; without even the implied warranty of
+#    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#    GNU General Public License for more details.
+#
+#    You should have received a copy of the GNU General Public License
+#    along with NeSTL. If not, see <http://www.gnu.org/licenses/>.
+
+import sys
+import math
+
+from mesh import Mesh, Vector
+import stl
+
+num_u = int(sys.argv[-5])
+num_v = int(sys.argv[-4])
+size = Vector(float(sys.argv[-3]), float(sys.argv[-2]), float(sys.argv[-1]))
+
+sphere = Mesh()
+
+#Vertices
+frange = lambda minX, maxX, numX: \
+	(minX + i*(maxX-minX)/(numX-1) for i in range(numX))
+
+vertexPosition = lambda u, v: \
+	Vector(
+		0.5*math.cos(v)*math.cos(u),
+		0.5*math.cos(v)*math.sin(u),
+		0.5*math.sin(v)
+		)
+
+sphere.vertices = \
+[
+	vertexPosition(u, v)
+	for u in frange(         0.0,   2*math.pi, num_u)
+	for v in frange(-0.5*math.pi, 0.5*math.pi, num_v)
+]
+
+#Triangles
+for u in range(num_u-1):
+	for v in range(num_v-1):
+		v0 = num_u*v + u
+		v1 = num_u*v + u + 1
+		v2 = num_u*(v+1) + u
+		v3 = num_u*(v+1) + u + 1
+		sphere.triangles.append([v0, v1, v3])
+		sphere.triangles.append([v0, v3, v2])
+
+stl.save(sys.stdout.buffer, sphere)
+
