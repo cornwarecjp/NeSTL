@@ -29,5 +29,5 @@ for filename in sys.argv:
 		subMesh = stl.load(f)
 		#TODO: add to totalMesh
 
-stl.save(sys.stdout, totalMesh)
+stl.save(sys.stdout.buffer, totalMesh)
 

@@ -1,4 +1,5 @@
-#    mesh.py
+#!/usr/bin/env python3
+#    stlbox.py
 #    Copyright (C) 2017 by CJP
 #
 #    This file is part of NeSTL.
@@ -16,18 +17,39 @@
 #    You should have received a copy of the GNU General Public License
 #    along with NeSTL. If not, see <http://www.gnu.org/licenses/>.
 
+import sys
 
-class Vector(list):
-	def __init__(self, x=0.0, y=0.0, z=0.0):
-		list.__init__(self, (x,y,z))
+from mesh import Mesh, Vector
+import stl
 
-	def scale(self, v):
-		return Vector(self[0]*v[0], self[1]*v[1], self[2]*v[2])
+size = Vector(float(sys.argv[-3]), float(sys.argv[-2]), float(sys.argv[-1]))
 
+box = Mesh()
 
-class Mesh:
-	def __init__(self):
-		self.vertices = []
-		self.triangles = []
+#Vertices
+box.vertices = \
+[
+	Vector(-0.5, -0.5, -0.5),
+	Vector(-0.5, -0.5,  0.5),
+	Vector(-0.5,  0.5, -0.5),
+	Vector(-0.5,  0.5,  0.5),
+	Vector( 0.5, -0.5, -0.5),
+	Vector( 0.5, -0.5,  0.5),
+	Vector( 0.5,  0.5, -0.5),
+	Vector( 0.5,  0.5,  0.5)
+]
+box.vertices = [v.scale(size) for v in box.vertices]
 
+#Triangles
+box.triangles = \
+[
+	[0,2,6], [0,6,4],
+	[0,4,5], [0,5,1],
+	[4,6,7], [4,7,5],
+	[6,2,3], [6,3,7],
+	[2,0,1], [2,1,3],
+	[1,5,7], [1,7,3]
+]
+
+stl.save(sys.stdout.buffer, box)
 
