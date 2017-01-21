@@ -33,6 +33,18 @@ class Vector(list):
 		return Vector(self[0]+v[0], self[1]+v[1], self[2]+v[2])
 
 
+	def equals(self, other, maxError=1e-6):
+		avg = [0.5*(other[k] + self[k]) for k in range(3)]
+		err = \
+		[
+			abs(other[k] - self[k]) /
+			(abs(avg[k]) + 1e-38) #prevent division by zero
+		for k in range(3)
+		]
+
+		return max(err) <= maxError
+
+
 
 class Mesh:
 	def __init__(self):
@@ -47,7 +59,7 @@ class Mesh:
 		return '\n'.join([str(x) for x in self.vertices + self.triangles])
 
 
-	def removeDoubleVertices(self, maxError=1e-6):
+	def removeDoubleVertices(self):
 		#sys.stderr.write('Before: %d\n' % len(self.vertices))
 		if len(self.vertices) < 2:
 			return
@@ -62,21 +74,13 @@ class Mesh:
 					v_j = self.vertices[j]
 					#sys.stderr.write('j=%d: %s\n' % (j, str(v_j)))
 
-					avg = [0.5*(v_j[k] + v_i[k]) for k in range(3)]
-					err = \
-					[
-						abs(v_j[k] - v_i[k]) /
-						(abs(avg[k]) + 1e-38) #prevent division by zero
-					for k in range(3)
-					]
-
-					if max(err) > maxError: #it's not a double
+					if not v_j.equals(v_i):
 						break #break from while -> continue with next j
 					#It's a double
-
 					#sys.stderr.write('double\n')
 
 					#Assign average to first vertex
+					avg = [0.5*(v_j[k] + v_i[k]) for k in range(3)]
 					v_i[0] = avg[0]
 					v_i[1] = avg[1]
 					v_i[2] = avg[2]
