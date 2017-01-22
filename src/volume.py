@@ -16,9 +16,9 @@
 #    You should have received a copy of the GNU General Public License
 #    along with NeSTL. If not, see <http://www.gnu.org/licenses/>.
 
-#import sys
 
 from mesh import Mesh
+from log import log
 
 
 
@@ -52,6 +52,40 @@ class Volume(Mesh):
 		Mesh.__init__(self)
 		self.vertices  = sourceMesh.vertices[:]
 		self.triangles = sourceMesh.triangles[:]
+		self.determineNeighbors()
+
+
+	def determineNeighbors(self):
+		def findNeighbor(v0, v1):
+			ret = None
+			for i in range(len(self.triangles)):
+				tri = self.triangles[i]
+				isNeighbor = \
+					(tri[0] == v1 and tri[1] == v0) or \
+					(tri[1] == v1 and tri[2] == v0) or \
+					(tri[2] == v1 and tri[0] == v0)
+				if isNeighbor:
+					if not(ret is None):
+						raise Exception(
+							'Mesh is not a proper volume description: '
+							'there is a triangle with multiple neighbors on one side')
+					ret = i
+
+			if ret is None:
+				raise Exception(
+					'Mesh is not a proper volume description: '
+					'there is a triangle without a neighbor on one side')
+			return ret
+
+		self.neighbors = \
+		[
+			[
+			findNeighbor(tri[0], tri[1]),
+			findNeighbor(tri[1], tri[2]),
+			findNeighbor(tri[2], tri[0])
+			]
+		for tri in self.triangles
+		]
 
 
 	def splitInsideOutside(self, otherMesh):
