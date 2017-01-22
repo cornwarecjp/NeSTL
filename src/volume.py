@@ -54,6 +54,7 @@ def getNumLoops(vtx, normal, loop):
 		p0 = loop[i]   - vtx
 		p1 = loop[i+1] - vtx
 		crossProd = p1.crossProduct(p0).dotProduct(normal) #|p0||p1|sin(a)
+		#TODO: in case of division by zero, return something arbitrary.
 		totalAngle += math.asin(crossProd / (p0.length()*p1.length()))
 
 	numLoops = totalAngle / (2*math.pi)
@@ -114,10 +115,14 @@ class Volume(Mesh):
 			insideTriangles = []
 			outsideTriangles = []
 			for tri in triangles:
-				#Check for one vertex whether it's inside or outside
+				#Check for one point whether it's inside or outside
+				#Do this for the middle point: if that point happens to be
+				#exactly on a border, we're sure we'll address the issue later,
+				#when we check for intersections that cross the triangle.
+				midPoint = (1/3)*(tri[0]+tri[1]+tri[2])
 				totalNumLoops = sum(
 				[
-				getNumLoops(tri[0], plane.normal, loop)
+				getNumLoops(midPoint, plane.normal, loop)
 				for loop in intersections
 				])
 				if totalNumLoops > 0:
@@ -161,7 +166,7 @@ class Volume(Mesh):
 					nb     = [    nb[1],     nb[2],     nb[0]]
 
 				#The neg->pos transition point (add to the loop)
-				f = relPos[1] / (relPos[1] - relPos[0])
+				f = 0.5 if relPos[1] == relPos[0] else relPos[1] / (relPos[1] - relPos[0])
 				loop.append(f * vtx[0] + (1-f) * vtx[1])
 
 				#Now, the pos->neg transition is in either 1->2 or 2->0
