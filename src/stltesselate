@@ -1,0 +1,74 @@
+#!/usr/bin/env python3
+#    stltesselate.py
+#    Copyright (C) 2017 by CJP
+#
+#    This file is part of NeSTL.
+#
+#    NeSTL is free software: you can redistribute it and/or modify
+#    it under the terms of the GNU General Public License as published by
+#    the Free Software Foundation, either version 3 of the License, or
+#    (at your option) any later version.
+#
+#    NeSTL is distributed in the hope that it will be useful,
+#    but WITHOUT ANY WARRANTY; without even the implied warranty of
+#    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#    GNU General Public License for more details.
+#
+#    You should have received a copy of the GNU General Public License
+#    along with NeSTL. If not, see <http://www.gnu.org/licenses/>.
+
+import sys
+
+import mesh
+import stl
+
+
+
+numSubdivisions = int(sys.argv[-2])
+
+#Pre-calculated pattern
+precalcCoordFractions = []
+for row in range(numSubdivisions+1):
+	f0 = 1 - row/numSubdivisions
+	for col in range(row+1):
+		f2 = col/numSubdivisions
+		f1 = 1 - f0 - f2
+		precalcCoordFractions.append((f0,f1,f2))
+precalcTriangleIndices = []
+leftIndex  = 0
+rightIndexStart = 1
+for row in range(numSubdivisions):
+	rightIndex = rightIndexStart
+	for col in range(row):
+		precalcTriangleIndices.append((leftIndex, rightIndex, rightIndex+1))
+		precalcTriangleIndices.append((leftIndex, rightIndex+1, leftIndex+1))
+		leftIndex += 1
+		rightIndex += 1
+	precalcTriangleIndices.append((leftIndex, rightIndex, rightIndex+1))
+	leftIndex = rightIndexStart
+	rightIndexStart = rightIndex+2
+
+
+with open(sys.argv[-1], 'rb') as f:
+	inputMesh = stl.load(f)
+
+outputMesh = mesh.Mesh()
+
+for tri in inputMesh.triangles:
+	tri = [inputMesh.vertices[k] for k in tri]
+	vertexIndexOffset = len(outputMesh.vertices)
+	outputMesh.vertices += \
+	[
+	f[0]*tri[0] + f[1]*tri[1] + f[2]*tri[2]
+	for f in precalcCoordFractions
+	]
+	outputMesh.triangles += \
+	[
+	[tri[0]+vertexIndexOffset, tri[1]+vertexIndexOffset, tri[2]+vertexIndexOffset]
+	for tri in precalcTriangleIndices
+	]
+
+
+
+stl.save(sys.stdout.buffer, outputMesh)
+
