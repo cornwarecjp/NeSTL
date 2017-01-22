@@ -16,8 +16,9 @@
 #    You should have received a copy of the GNU General Public License
 #    along with NeSTL. If not, see <http://www.gnu.org/licenses/>.
 
-#import sys
 import math
+
+from log import log
 
 
 
@@ -63,14 +64,7 @@ class Vector(list):
 		
 
 	def equals(self, other, maxError=1e-6):
-		avg = [0.5*(other[k] + self[k]) for k in range(3)]
-		err = \
-		[
-			abs(other[k] - self[k]) /
-			(abs(avg[k]) + 1e-38) #prevent division by zero
-		for k in range(3)
-		]
-
+		err = [abs(other[k] - self[k]) for k in range(3)]
 		return max(err) <= maxError
 
 
@@ -89,7 +83,7 @@ class Mesh:
 
 
 	def removeDoubleVertices(self):
-		#sys.stderr.write('Before: %d\n' % len(self.vertices))
+		log('Before: %dv, %dt' % (len(self.vertices), len(self.triangles)))
 		if len(self.vertices) < 2:
 			return
 
@@ -97,16 +91,16 @@ class Mesh:
 			if i >= len(self.vertices)-1:
 				break
 			v_i = self.vertices[i]
-			#sys.stderr.write('i=%d: %s\n' % (i, str(v_i)))
+			#log('i: ' + str(v_i))
 			for j in range(i+1, len(self.vertices)):
 				while j < len(self.vertices):
 					v_j = self.vertices[j]
-					#sys.stderr.write('j=%d: %s\n' % (j, str(v_j)))
+					#log('    j: ' + str(v_j))
 
 					if not v_j.equals(v_i):
 						break #break from while -> continue with next j
 					#It's a double
-					#sys.stderr.write('double\n')
+					#log('    double')
 
 					#Assign average to first vertex
 					avg = [0.5*(v_j[k] + v_i[k]) for k in range(3)]
@@ -117,7 +111,7 @@ class Mesh:
 					#Remove second vertex
 					del self.vertices[j]
 
-					#Replace references to second vertex
+					#Replace references to second vertex, and rewrite higher indices
 					for tri in self.triangles:
 						for k in range(3):
 							if tri[k] > j:
@@ -130,5 +124,5 @@ class Mesh:
 			lambda tri: tri[0] != tri[1] and tri[1] != tri[2] and tri[2] != tri[0],
 			self.triangles))
 
-		#sys.stderr.write('After: %d\n' % len(self.vertices))
+		log('After: %dv, %dt' % (len(self.vertices), len(self.triangles)))
 
