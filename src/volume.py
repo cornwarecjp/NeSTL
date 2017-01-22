@@ -17,7 +17,7 @@
 #    along with NeSTL. If not, see <http://www.gnu.org/licenses/>.
 
 
-from mesh import Mesh
+from mesh import Mesh, Plane
 from log import log
 
 
@@ -27,7 +27,7 @@ def getTrianglePlane(tri):
 	v2 = tri[2] - tri[1]
 	normal = v1.crossProduct(v2).normal()
 	distance = tri[0].dotProduct(normal)
-	return distance * normal
+	return Plane(normal, distance)
 
 
 def getTrianglesByPlane(sourceMesh):
@@ -97,9 +97,6 @@ class Volume(Mesh):
 
 
 	def getPlaneIntersections(self, plane):
-		planeNormal = plane.normal()
-		planePos    = plane.length()
-
 		ret = []
 
 		notYetProcessed = list(range(len(self.triangles)))
@@ -107,7 +104,7 @@ class Volume(Mesh):
 			startIndex = notYetProcessed.pop(0)
 
 			vtx = [self.vertices[k] for k in self.triangles[startIndex]]
-			relPos = [v.dotProduct(planeNormal) - planePos for v in vtx]
+			relPos = [v.dotProduct(plane.normal) - plane.distance for v in vtx]
 			nb = self.neighbors[startIndex][:] #load copy of neighbors
 
 			#If the triangle is entirely on one side of the plane,
@@ -145,7 +142,7 @@ class Volume(Mesh):
 
 				#Load new triangle (for next iteration)
 				vtx = [self.vertices[k] for k in self.triangles[triIndex]]
-				relPos = [v.dotProduct(planeNormal) - planePos for v in vtx]
+				relPos = [v.dotProduct(plane.normal) - plane.distance for v in vtx]
 				nb = self.neighbors[triIndex][:] #load copy of neighbors
 
 			ret.append(loop)

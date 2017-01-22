@@ -69,6 +69,17 @@ class Vector(list):
 
 
 
+class Plane:
+	def __init__(self, normal, distance):
+		self.normal = normal
+		self.distance = distance
+
+	def equals(self, other, maxError=1e-6):
+		return self.normal.equals(other.normal, maxError) and \
+			abs(self.distance - other.distance) <= maxError
+
+
+
 class Mesh:
 	def __init__(self):
 		self.vertices = []
