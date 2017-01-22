@@ -94,41 +94,76 @@ class Mesh:
 
 
 	def removeDoubleVertices(self):
+		maxError=1e-6
+
+		#As an optimization, before checking vertices, make a list of
+		#vertex indices that is sorted on coordinate bins.
+		#Then, only compare vertex pairs that are close on this list.
+		#Bin size is 1 * maxError. The trade-off is:
+		# - larger bin size: increases the likelihood that non-matching vertices
+		#                    end up in the same bin; this could prevent matching
+		#                    vertices in that bin from being matched.
+		# - smaller bin size: increases the likelihood that matching vertices
+		#                     end up in different bins; this would prevent those
+		#                     vertices from being matched.
+		sortedVertexList = list(range(len(self.vertices)))
+		sortedVertexList.sort(key=lambda i: math.floor(self.vertices[i][0]/maxError))
+		sortedVertexList.sort(key=lambda i: math.floor(self.vertices[i][1]/maxError))
+		sortedVertexList.sort(key=lambda i: math.floor(self.vertices[i][2]/maxError))
+		self.removeDoubleVertices_sortList(sortedVertexList, maxError)
+
+		# do it again, with shifted bins:
+		sortedVertexList = list(range(len(self.vertices)))
+		sortedVertexList.sort(key=lambda i: math.floor(0.5+self.vertices[i][0]/maxError))
+		sortedVertexList.sort(key=lambda i: math.floor(0.5+self.vertices[i][1]/maxError))
+		sortedVertexList.sort(key=lambda i: math.floor(0.5+self.vertices[i][2]/maxError))
+		self.removeDoubleVertices_sortList(sortedVertexList, maxError)
+
+
+	def removeDoubleVertices_sortList(self, sortedVertexList, maxError):
 		log('Before: %dv, %dt' % (len(self.vertices), len(self.triangles)))
 		if len(self.vertices) < 2:
 			return
 
-		for i in range(len(self.vertices)-1):
-			if i >= len(self.vertices)-1:
+		for i_sorted in range(len(self.vertices)-1):
+			if i_sorted >= len(self.vertices)-1:
 				break
+			i = sortedVertexList[i_sorted]
 			v_i = self.vertices[i]
 			#log('i: ' + str(v_i))
-			for j in range(i+1, len(self.vertices)):
-				while j < len(self.vertices):
-					v_j = self.vertices[j]
-					#log('    j: ' + str(v_j))
+			for j_sorted in range(i_sorted+1, len(self.vertices)):
+				if j_sorted >= len(self.vertices):
+					break
+				j = sortedVertexList[j_sorted]
+				v_j = self.vertices[j]
+				#log('    j: ' + str(v_j))
 
-					if not v_j.equals(v_i):
-						break #break from while -> continue with next j
-					#It's a double
-					#log('    double')
+				if not v_j.equals(v_i, maxError):
+					break
 
-					#Assign average to first vertex
-					avg = [0.5*(v_j[k] + v_i[k]) for k in range(3)]
-					v_i[0] = avg[0]
-					v_i[1] = avg[1]
-					v_i[2] = avg[2]
+				#It's a double
+				#log('    double')
 
-					#Remove second vertex
-					del self.vertices[j]
+				#Assign average to first vertex
+				avg = [0.5*(v_j[k] + v_i[k]) for k in range(3)]
+				v_i[0] = avg[0]
+				v_i[1] = avg[1]
+				v_i[2] = avg[2]
 
-					#Replace references to second vertex, and rewrite higher indices
-					for tri in self.triangles:
-						for k in range(3):
-							if tri[k] > j:
-								tri[k] -= 1
-							elif tri[k] == j:
-								tri[k] = i
+				#Remove second vertex
+				del self.vertices[j]
+				del sortedVertexList[j_sorted]
+
+				#Replace references to second vertex, and rewrite higher indices
+				for tri in self.triangles:
+					for k in range(3):
+						if tri[k] > j:
+							tri[k] -= 1
+						elif tri[k] == j:
+							tri[k] = i
+				for k in range(len(sortedVertexList)):
+					if sortedVertexList[k] > j:
+						sortedVertexList[k] -= 1
 
 		#Remove triangles that have become lines or points
 		self.triangles = list(filter(
