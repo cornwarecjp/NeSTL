@@ -34,8 +34,9 @@ mesh2.removeDoubleVertices()
 volume2 = volume.Volume(mesh2)
 
 #Select the part that is outside the other
-mesh1 = volume2.getOutsidePart(mesh1)
-mesh2 = volume1.getOutsidePart(mesh2)
+inside, mesh1 = volume2.splitInsideOutside(mesh1)
+inside, mesh2 = volume1.splitInsideOutside(mesh2)
+del inside
 
 #Concatenate the meshes
 totalMesh = mesh1

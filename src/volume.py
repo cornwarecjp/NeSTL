@@ -54,14 +54,49 @@ class Volume(Mesh):
 		self.triangles = sourceMesh.triangles[:]
 
 
-	def getOutsidePart(self, otherMesh):
+	def splitInsideOutside(self, otherMesh):
 		planes = getTrianglesByPlane(otherMesh)
-		#for pl,tr in planes:
-		#	sys.stderr.write('%s\n' % str(pl))
-		return otherMesh #TODO
+		for plane, triangles in planes:
+			#sys.stderr.write('%s\n' % str(plane))
+			intersections = self.getPlaneIntersections(plane)
+		return otherMesh, otherMesh #TODO
 
 
-	def getInsidePart(self, otherMesh):
-		planes = getTrianglesByPlane(otherMesh)
-		return otherMesh #TODO
+	def getPlaneIntersections(self, plane):
+		planeNormal = plane.normal()
+		planePos    = plane.length()
+
+		ret = []
+
+		for tri in self.triangles:
+			tri = [self.vertices[k] for k in tri]
+			relPos = [v.dotProduct(planeNormal) - planePos for v in tri]
+
+			#If the triangle is entirely on one side of the plane,
+			#it does not intersect -> ignore this triangle
+			side = [p > 0.0 for p in relPos]
+			if False not in side or True not in side:
+				continue
+
+			#Keep permutating vertices until 0->1 is a neg->pos transition
+			while relPos[0] > 0.0 or relPos[1] < 0.0:
+				relPos = [relPos[1], relPos[2], relPos[0]]
+				tri    = [   tri[1],    tri[2],    tri[0]]
+
+			#The neg->pos transition point
+			f = relPos[1] / (relPos[1] - relPos[0])
+			p0 = f * tri[0] + (1-f) * tri[1]
+
+			#Now, the pos->neg transition is in either 1->2 or 2->0
+			if relPos[2] > 0.0: #2->0
+				f = relPos[2] / (relPos[2] - relPos[0])
+				p1 = f * tri[0] + (1-f) * tri[2]
+			else:               #1->2
+				f = relPos[1] / (relPos[1] - relPos[2])
+				p1 = f * tri[2] + (1-f) * tri[1]
+
+			ret.append((p0, p1))
+
+		#TODO: detect loops?
+		return ret
 

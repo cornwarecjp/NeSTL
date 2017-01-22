@@ -54,9 +54,12 @@ class Vector(list):
 			)
 
 
+	def length(self):
+		return math.sqrt(self[0]**2 + self[1]**2 + self[2]**2)
+
+
 	def normal(self):
-		size = math.sqrt(self[0]**2 + self[1]**2 + self[2]**2)
-		return (1.0/size) * self
+		return (1.0/self.length()) * self
 		
 
 	def equals(self, other, maxError=1e-6):
