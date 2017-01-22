@@ -16,6 +16,7 @@
 #    You should have received a copy of the GNU General Public License
 #    along with NeSTL. If not, see <http://www.gnu.org/licenses/>.
 
+import math
 
 from mesh import Mesh, Plane
 from log import log
@@ -44,6 +45,20 @@ def getTrianglesByPlane(sourceMesh):
 		if not found:
 			ret.append((triPlane, [tri]))
 	return ret
+
+
+def getNumLoops(vtx, normal, loop):
+	loop = loop[:] + [loop[0]]
+	totalAngle = 0
+	for i in range(len(loop)-1):
+		p0 = loop[i]   - vtx
+		p1 = loop[i+1] - vtx
+		crossProd = p1.crossProduct(p0).dotProduct(normal) #|p0||p1|sin(a)
+		totalAngle += math.asin(crossProd / (p0.length()*p1.length()))
+
+	numLoops = totalAngle / (2*math.pi)
+	#log(numLoops)
+	return math.floor(numLoops + 0.5) #round to nearest
 
 
 
@@ -89,10 +104,32 @@ class Volume(Mesh):
 
 
 	def splitInsideOutside(self, otherMesh):
+		insideMesh = Mesh()
+		outsideMesh = Mesh()
+
 		planes = getTrianglesByPlane(otherMesh)
 		for plane, triangles in planes:
-			#sys.stderr.write('%s\n' % str(plane))
 			intersections = self.getPlaneIntersections(plane)
+
+			insideTriangles = []
+			outsideTriangles = []
+			for tri in triangles:
+				#Check for one vertex whether it's inside or outside
+				totalNumLoops = sum(
+				[
+				getNumLoops(tri[0], plane.normal, loop)
+				for loop in intersections
+				])
+				if totalNumLoops > 0:
+					insideTriangles.append(tri)
+				elif totalNumLoops == 0:
+					outsideTriangles.append(tri)
+				else: # totalNumLoops < 0:
+					raise Exception(
+						'Unexpected negative number of loops. '
+						'Maybe the volume is inside-out?'
+						)
+			
 		return otherMesh, otherMesh #TODO
 
 
