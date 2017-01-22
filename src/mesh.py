@@ -124,5 +124,11 @@ class Mesh:
 								tri[k] -= 1
 							elif tri[k] == j:
 								tri[k] = i
+
+		#Remove triangles that have become lines or points
+		self.triangles = list(filter(
+			lambda tri: tri[0] != tri[1] and tri[1] != tri[2] and tri[2] != tri[0],
+			self.triangles))
+
 		#sys.stderr.write('After: %d\n' % len(self.vertices))
 

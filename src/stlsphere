@@ -57,5 +57,7 @@ for u in range(num_u-1):
 		sphere.triangles.append([v0, v1, v3])
 		sphere.triangles.append([v0, v3, v2])
 
+sphere.removeDoubleVertices() #useful to remove redundant triangles
+
 stl.save(sys.stdout.buffer, sphere)
 
