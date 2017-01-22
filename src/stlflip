@@ -25,9 +25,11 @@ import stl
 with open(sys.argv[1], 'rb') as f:
 	mesh = stl.load(f)
 
-for i in range(len(mesh.triangles)):
-	tri = mesh.triangles[i]
-	mesh.triangles[i] = [tri[2], tri[1], tri[0]]
+mesh.triangles = \
+[
+	[tri[2], tri[1], tri[0]]
+	for tri in mesh.triangles
+]
 
 stl.save(sys.stdout.buffer, mesh)
 
