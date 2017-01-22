@@ -134,8 +134,20 @@ class Volume(Mesh):
 						'Unexpected negative number of loops. '
 						'Maybe the volume is inside-out?'
 						)
-			
-		return otherMesh, otherMesh #TODO
+
+			#TODO: split triangles that are intersected by (a) loop(s)
+
+			for tri in insideTriangles:
+				vtxIndex = len(insideMesh.vertices)
+				insideMesh.vertices += tri
+				insideMesh.triangles.append([vtxIndex,vtxIndex+1,vtxIndex+2])
+
+			for tri in outsideTriangles:
+				vtxIndex = len(outsideMesh.vertices)
+				outsideMesh.vertices += tri
+				outsideMesh.triangles.append([vtxIndex,vtxIndex+1,vtxIndex+2])
+
+		return insideMesh, outsideMesh
 
 
 	def getPlaneIntersections(self, plane):
