@@ -102,9 +102,13 @@ class Volume(Mesh):
 
 		ret = []
 
-		for tri in self.triangles:
-			tri = [self.vertices[k] for k in tri]
-			relPos = [v.dotProduct(planeNormal) - planePos for v in tri]
+		notYetProcessed = list(range(len(self.triangles)))
+		while len(notYetProcessed) > 0:
+			startIndex = notYetProcessed.pop(0)
+
+			vtx = [self.vertices[k] for k in self.triangles[startIndex]]
+			relPos = [v.dotProduct(planeNormal) - planePos for v in vtx]
+			nb = self.neighbors[startIndex][:] #load copy of neighbors
 
 			#If the triangle is entirely on one side of the plane,
 			#it does not intersect -> ignore this triangle
@@ -112,25 +116,39 @@ class Volume(Mesh):
 			if False not in side or True not in side:
 				continue
 
-			#Keep permutating vertices until 0->1 is a neg->pos transition
-			while relPos[0] > 0.0 or relPos[1] < 0.0:
-				relPos = [relPos[1], relPos[2], relPos[0]]
-				tri    = [   tri[1],    tri[2],    tri[0]]
+			loop = []
 
-			#The neg->pos transition point
-			f = relPos[1] / (relPos[1] - relPos[0])
-			p0 = f * tri[0] + (1-f) * tri[1]
+			triIndex = startIndex
+			while True:
+				#Keep permutating vertices until 0->1 is a neg->pos transition
+				while relPos[0] > 0.0 or relPos[1] < 0.0:
+					relPos = [relPos[1], relPos[2], relPos[0]]
+					vtx    = [   vtx[1],    vtx[2],    vtx[0]]
+					nb     = [    nb[1],     nb[2],     nb[0]]
 
-			#Now, the pos->neg transition is in either 1->2 or 2->0
-			if relPos[2] > 0.0: #2->0
-				f = relPos[2] / (relPos[2] - relPos[0])
-				p1 = f * tri[0] + (1-f) * tri[2]
-			else:               #1->2
-				f = relPos[1] / (relPos[1] - relPos[2])
-				p1 = f * tri[2] + (1-f) * tri[1]
+				#The neg->pos transition point (add to the loop)
+				f = relPos[1] / (relPos[1] - relPos[0])
+				loop.append(f * vtx[0] + (1-f) * vtx[1])
 
-			ret.append((p0, p1))
+				#Now, the pos->neg transition is in either 1->2 or 2->0
+				if relPos[2] > 0.0: #2->0
+					triIndex = nb[2]
+				else:               #1->2
+					triIndex = nb[1]
 
-		#TODO: detect loops?
+				#Stop if start index is reached (end of loop):
+				if triIndex == startIndex:
+					break
+
+				#We'll be processing it now, so don't do it later again:
+				notYetProcessed.remove(triIndex)
+
+				#Load new triangle (for next iteration)
+				vtx = [self.vertices[k] for k in self.triangles[triIndex]]
+				relPos = [v.dotProduct(planeNormal) - planePos for v in vtx]
+				nb = self.neighbors[triIndex][:] #load copy of neighbors
+
+			ret.append(loop)
+
 		return ret
 
